@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.4.4] - 2021-01-27
+
+### Fixed
+- Verify order amount vs paid amount when is approved status notification
+
+## [4.4.3] - 2021-01-18
+
+### Fixed
+- Added the prefix in the upgrade table
+
+## [4.4.2] - 2021-01-18
+
+### Fixed
+- Check paid amount before change order status
+- Set amount from Mercado Pago response on order_payments
+
+## [4.4.1] - 2021-01-18
+
+### Fixed
+- Remove visibility from const to be compatible with PHP7.0
+
+## [4.4.0] - 2020-12-28
+
+### Added
+- Added admin tab to view or download the plugin log
+- Added plugin version o notification response
+
+### Changed
+- Renamed from Checkout Mercado Pago for Checkout Pro
+
+### Fixed
+- Fixed getIssuers method on custom-card.js
+
 ## [4.3.0] - 2020-11-10
 
 ### Added
@@ -84,4 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Mercado Envíos.
 - Discount coupons.
+<<<<<<< HEAD
 - Installment calculator.
+=======
+- Installment calculator.
+>>>>>>> 67ef7918a9cd12191a3ed5cfc02a9420b778e2ed

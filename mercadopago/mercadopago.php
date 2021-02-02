@@ -1,6 +1,6 @@
 <?php
 /**
- * 2007-2018 PrestaShop.
+ * 2007-2021 PrestaShop.
  *
  * NOTICE OF LICENSE
  *
@@ -24,7 +24,7 @@
  *  International Registered Trademark & Property of MercadoPago
  */
 
-define('MP_VERSION', '4.3.0');
+define('MP_VERSION', '4.4.4');
 define('MP_ROOT_URL', dirname(__FILE__));
 
 if (!defined('_PS_VERSION_')) {
@@ -72,7 +72,7 @@ class Mercadopago extends PaymentModule
         $this->bootstrap = true;
 
         //Always update, because prestashop doesn't accept version coming from another variable (MP_VERSION)
-        $this->version = '4.3.0';
+        $this->version = '4.4.4';
 
         parent::__construct();
 
@@ -235,6 +235,11 @@ class Mercadopago extends PaymentModule
             'message' => self::$form_message,
             'mp_version' => MP_VERSION,
             'url_base' => __PS_BASE_URI__,
+            'log' => (object) array(
+                'url' => MPLog::getLogUrl(),
+                'isWritable' => MPLog::isWritableFile(),
+                'isReadable' => MPLog::isReadableFile()
+            ),
             'country_link' => $country_link,
             'application' => Configuration::get('MERCADOPAGO_APPLICATION_ID'),
             'standard_test' => Configuration::get('MERCADOPAGO_STANDARD'),
@@ -636,5 +641,26 @@ class Mercadopago extends PaymentModule
         } else {
             return self::PRESTA16;
         }
+    }
+
+    public function loadSQLFile($sql_file)
+    {
+        // Get install SQL file content
+        $sql_content = Tools::file_get_contents($sql_file);
+
+        // Replace prefix and store SQL command in array
+        $sql_content = str_replace('PREFIX_', _DB_PREFIX_, $sql_content);
+        $sql_requests = preg_split("/;\s*[\r\n]+/", $sql_content);
+
+        // Execute each SQL statement
+        $result = true;
+        foreach ($sql_requests as $request) {
+            if (!empty($request)) {
+                $result &= Db::getInstance()->execute(trim($request));
+            }
+        }
+
+        // Return result
+        return $result;
     }
 }
