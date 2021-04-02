@@ -1,3 +1,4 @@
+<?php
 /**
  * 2007-2021 PrestaShop.
  *
@@ -23,36 +24,21 @@
  *  International Registered Trademark & Property of MercadoPago
  */
 
-const gulp = require('gulp');
-const uglify = require('gulp-uglify');
-const rename = require('gulp-rename');
-const cleanCSS = require('gulp-clean-css');
+function upgrade_module_4_5_1()
+{
+    $files = [
+        'mercadopago.log',
+        'mercadopago430.log',
+        'mercadopago440.log',
+        'mercadopago441.log'
+    ];
 
-const config = {
-  scripts: [
-    './views/js/back.js',
-    './views/js/custom-card.js',
-    './views/js/front.js',
-    './views/js/ticket.js'
-  ],
-  stylesheets: [
-    './views/css/front.css',
-    './views/css/back.css'
-  ]
-};
+    foreach ($files as $name) {
+        $file = MP_ROOT_URL . '/logs/' . $name;
+        if (file_exists($file) && is_writable($file)) {
+            file_put_contents($file, '');
+        }
+    }
 
-gulp.task('scripts', () => {
-  return gulp.src(config.scripts)
-    .pipe(uglify())
-    .pipe(rename({ extname: '.min.js' }))
-    .pipe(gulp.dest('./views/js/'));
-});
-
-gulp.task('stylesheets', () => {
-  return gulp.src(config.stylesheets)
-    .pipe(cleanCSS({ compatibility: 'ie8' }))
-    .pipe(rename({ extname: '.min.css' }))
-    .pipe(gulp.dest('./views/css/'));
-});
-
-gulp.task('minify-assets', gulp.series('scripts', 'stylesheets'));
+    return true;
+}

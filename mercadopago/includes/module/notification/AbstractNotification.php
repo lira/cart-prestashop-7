@@ -89,11 +89,7 @@ class AbstractNotification
                 $this->amount = $this->pending;
                 $this->order_state = $this->getNotificationPaymentState('in_process');
             } else {
-                if ($this->total > $this->approved && $this->status === 'approved') {
-                    $this->order_state = $this->getNotificationPaymentState('in_process');
-                } else {
-                    $this->order_state = $this->getNotificationPaymentState($this->status);
-                }
+                $this->order_state = $this->getNotificationPaymentState($this->status);
             }
 
             return $this->order_state;
@@ -220,8 +216,8 @@ class AbstractNotification
                     break;
             }
         } else {
-            MPLog::generate('Order does not exist', 'warning');
-            $this->getNotificationResponse('Order does not exist', 422);
+            MPLog::generate('Order does not exist', 'error');
+            $this->getNotificationResponse('Order does not exist', 404);
         }
     }
 
@@ -234,12 +230,18 @@ class AbstractNotification
     {
         if ($actual_status == $status) {
             MPLog::generate('Order status is the same', 'warning');
-            $this->getNotificationResponse('Order status is the same', 422);
+            $this->getNotificationResponse('Order status is the same', 202);
+        } elseif ($this->total > $this->approved) {
+            MPLog::generate('The order '. $this->order_id .' has not been updated by a possible fraud', 'error');
+            $this->getNotificationResponse(
+                'The order ' . $this->order_id . ' has not been updated by a possible fraud',
+                200
+            );
         } elseif ($validate_actual == true) {
             $this->updatePrestashopOrder($cart, $order);
         } else {
             MPLog::generate('The order has been updated to a status that does not belong to Mercado Pago', 'warning');
-            $this->getNotificationResponse('The order has been updated to a status that does not belong to MP', 422);
+            $this->getNotificationResponse('The order has been updated to a status that does not belong to MP', 200);
         }
     }
 
@@ -254,15 +256,15 @@ class AbstractNotification
 
         if ($actual_status == $status) {
             MPLog::generate('Order status is the same', 'warning');
-            $this->getNotificationResponse('Order status is the same', 422);
+            $this->getNotificationResponse('Order status is the same', 202);
         } elseif ($actual_status == $status_approved) {
             MPLog::generate('It is only possible to mediate, chargeback or refund an approved payment', 'warning');
-            $this->getNotificationResponse('It is not possible to update this approved payment', 422);
+            $this->getNotificationResponse('It is not possible to update this approved payment', 200);
         } elseif ($validate_actual == true) {
             $this->updatePrestashopOrder($cart, $order);
         } else {
             MPLog::generate('The order has been updated to a status that does not belong to Mercado Pago', 'warning');
-            $this->getNotificationResponse('The order has been updated to a status that does not belong to MP', 422);
+            $this->getNotificationResponse('The order has been updated to a status that does not belong to MP', 200);
         }
     }
 
@@ -277,15 +279,15 @@ class AbstractNotification
 
         if ($actual_status == $status) {
             MPLog::generate('Order status is the same', 'warning');
-            $this->getNotificationResponse('Order status is the same', 422);
+            $this->getNotificationResponse('Order status is the same', 202);
         } elseif ($actual_status == $status_approved) {
             MPLog::generate('It is only possible to mediate, chargeback or refund an approved payment', 'warning');
-            $this->getNotificationResponse('It is not possible to update this approved payment', 422);
+            $this->getNotificationResponse('It is not possible to update this approved payment', 200);
         } elseif ($validate_actual == true) {
             $this->updatePrestashopOrder($cart, $order);
         } else {
             MPLog::generate('The order has been updated to a status that does not belong to Mercado Pago', 'warning');
-            $this->getNotificationResponse('The order has been updated to a status that does not belong to MP', 422);
+            $this->getNotificationResponse('The order has been updated to a status that does not belong to MP', 200);
         }
     }
 
@@ -298,7 +300,7 @@ class AbstractNotification
     {
         if ($actual_status == $status) {
             MPLog::generate('Order status is the same', 'warning');
-            $this->getNotificationResponse('Order status is the same', 422);
+            $this->getNotificationResponse('Order status is the same', 202);
         } else {
             $this->updatePrestashopOrder($cart, $order);
         }
@@ -339,11 +341,25 @@ class AbstractNotification
      */
     public function saveCreateOrderData($cart)
     {
-        $payments_id = is_array($this->payments_data['payments_id']) ? implode(',', $this->payments_data['payments_id']) : $this->payments_data['payments_id'];
-        $payments_type = is_array($this->payments_data['payments_type']) ? implode(',', $this->payments_data['payments_type']) : $this->payments_data['payments_type'];
-        $payments_method = is_array($this->payments_data['payments_method']) ? implode(',', $this->payments_data['payments_method']) : $this->payments_data['payments_method'];
-        $payments_status = is_array($this->payments_data['payments_status']) ? implode(',', $this->payments_data['payments_status']) : $this->payments_data['payments_status'];
-        $payments_amount = is_array($this->payments_data['payments_amount']) ? implode(',', $this->payments_data['payments_amount']) : $this->payments_data['payments_amount'];
+        $payments_id = is_array($this->payments_data['payments_id'])
+            ? implode(',', $this->payments_data['payments_id'])
+            : $this->payments_data['payments_id'];
+
+        $payments_type = is_array($this->payments_data['payments_type'])
+            ? implode(',', $this->payments_data['payments_type'])
+            : $this->payments_data['payments_type'];
+
+        $payments_method = is_array($this->payments_data['payments_method'])
+            ? implode(',', $this->payments_data['payments_method'])
+            : $this->payments_data['payments_method'];
+
+        $payments_status = is_array($this->payments_data['payments_status'])
+            ? implode(',', $this->payments_data['payments_status'])
+            : $this->payments_data['payments_status'];
+
+        $payments_amount = is_array($this->payments_data['payments_amount'])
+            ? implode(',', $this->payments_data['payments_amount'])
+            : $this->payments_data['payments_amount'];
 
         $dataToCreate =  [
             "order_id" => $this->order_id,
@@ -498,12 +514,17 @@ class AbstractNotification
      */
     public function generateLogs()
     {
-        MPLog::generate('Transaction id: ' . $this->transaction_id);
-        MPLog::generate('Cart total: ' . $this->total);
-        MPLog::generate('Order id: ' . $this->order_id);
-        MPLog::generate('Payment status: ' . $this->status);
-        MPLog::generate('Approved order_state: ' . $this->approved);
-        MPLog::generate('Pending order_state: ' . $this->pending);
-        MPLog::generate('Order state: ' . $this->order_state);
+        $logs = [
+          "transaction_id" => $this->transaction_id,
+          "cart_total" => $this->total,
+          "order_id" => $this->order_id,
+          "payment_status" => $this->status,
+          "approved_order_state" => $this->approved,
+          "pending_order_state" => $this->pending,
+          "order_state" => $this->order_state,
+        ];
+
+        $encodedLogs = Tools::jsonEncode($logs);
+        MPLog::generate('Order id ' . $this->order_id . ' notification logs: ' . $encodedLogs);
     }
 }
