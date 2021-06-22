@@ -206,6 +206,28 @@ class AbstractPreference
             $items[] = $item;
         }
 
+        // Check has price difference
+        $cartTotal = $round ? Tools::ps_round($cart->getOrderTotal(true)) : $cart->getOrderTotal();
+        $itemsTotal = array_reduce(
+            $items,
+            function ($accumulator, $item) {
+                $accumulator += $item['unit_price'] * $item['quantity'];
+                return $accumulator;
+            }
+        );
+        $itemsTotal = $round ? Tools::ps_round($itemsTotal) : Tools::ps_round($itemsTotal, 2);
+        $priceDiff = $cartTotal - $itemsTotal;
+
+        if ($priceDiff > 0) {
+            $items[] = array(
+                'title' => 'Difference',
+                'quantity' => 1,
+                'unit_price' => $round ? Tools::ps_round($priceDiff) : $priceDiff,
+                'category_id' => $this->settings['MERCADOPAGO_STORE_CATEGORY'],
+                'description' => 'Adjustment for the Mercado Pago price to be the same as the store',
+            );
+        }
+
         return $items;
     }
 
@@ -231,8 +253,8 @@ class AbstractPreference
         if (!strrpos($this->getSiteUrl(), 'localhost')) {
             $notification_url = Tools::getShopDomainSsl(true, true) . __PS_BASE_URI__ .
                 '?fc=module&module=mercadopago&controller=notification&' .
-                'checkout=' . $this->checkout . '&cart_id=' . $cart->id . '&customer=' . $customer->secure_key .
-                '&notification=ipn';
+                'checkout=' . $this->checkout . '&customer=' . $customer->secure_key .
+                '&notification=ipn&&source_news=ipn';
 
             return $notification_url;
         }
